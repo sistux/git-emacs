@@ -114,7 +114,7 @@ repository. If START-COMMIT is nil, use the current branch, otherwise the
 given commit. Assumes it is being run from a buffer whose
 default-directory is inside the repo."
   (let* ((rel-filenames (mapcar #'file-relative-name files))
-         (log-qualifier (case (length files)
+         (log-qualifier (cl-case (length files)
                                (0 (abbreviate-file-name (git--get-top-dir)))
                                (1 (first rel-filenames))
                                (t (format "%d files" (length files)))))
@@ -143,7 +143,7 @@ default-directory is inside the repo."
 		  (setq logs-count "50"))
       ;; vc-do-command does almost everything right. Beware, it misbehaves
       ;; if not called with current buffer (undoes our setup)
-      (apply #'vc-do-command buffer 'async "git" nil "log" (format "-%s" logs-count)
+      (apply #'vc-do-command buffer 'async "git" nil "log" "--follow" (format "-%s" logs-count)
              (append (when start-commit (list start-commit))
                      (list "--")
                      rel-filenames))

@@ -84,8 +84,6 @@
 ;; DONE : remote branch list
 ;; DONE : separate branch-mode & status-view-mode to other files
 
-
-(require 'cl)                           ; common lisp
 (require 'ediff)                        ; we use this a lot
 (require 'vc)                           ; vc
 (require 'vc-git)                       ; vc-git advises
@@ -241,11 +239,11 @@ a failure message."
     ;; trim front
     (while (and (< begin end)
                 (memq (aref str begin) '(? ?\n)))
-      (incf begin))
+      (cl-incf begin))
     ;; trim rear
     (while (and (<= begin end)
                 (memq (aref str end) '(? ?\n)))
-      (decf end))
+      (cl-decf end))
     (substring str begin (+ end 1))))
 
 (defun git--exec-string (cmd &rest args)
@@ -289,7 +287,7 @@ the standard output there. Returns the git return code."
   (let ((end (- (length str) 1)))
     (while (and (< 0 end)
                 (memq (aref str end) '(? ?\n)))
-      (decf end))
+      (cl-decf end))
     (substring str 0 (+ end 1))))
 
 (defun git--pop-to-buffer(buffer)
@@ -369,7 +367,7 @@ autoloading which we know has already happened."
 
 (defsubst git--interpret-to-state-symbol (stat)
   "Interpret a one-letter git state string to our state symbols."
-  (case (string-to-char stat)
+  (cl-case (string-to-char stat)
     (?H 'uptodate )
     (?M 'modified )
     (?? 'unknown  )
@@ -487,7 +485,7 @@ visiting files that no longer exist."
                   ;; A hash table is probably not worth it here.
                   (setq buffers-not-reverted
                         (delq buffer buffers-not-reverted))
-                  (incf num-buffers-refreshed)))
+                  (cl-incf num-buffers-refreshed)))
             ;; Filter buffers by their saved status.
             (dolist (buffer buffers-that-exist)
               (if (buffer-modified-p buffer)
@@ -496,15 +494,15 @@ visiting files that no longer exist."
             ;; Do the state mark update if the user quits the revert prompts.
             ;; Or, on all unsaved buffers.
             (unwind-protect
-                (case git-working-dir-change-behaviour
-                  ('git-ask-for-all-saved
+                (cl-case git-working-dir-change-behaviour
+                  (git-ask-for-all-saved
                    (map-y-or-n-p
                     (lambda(buffer) (format "%s has changed, refresh buffer? "
                                             (buffer-name buffer)))
                     #'buffer-refresh-func
                     buffers-that-exist-saved
                     '("buffer" "buffers" "refresh")))
-                  ('git-refresh-all-saved
+                  (git-refresh-all-saved
                    (mapc #'buffer-refresh-func buffers-that-exist-saved)))
               (when buffers-not-reverted
                 (git--update-all-state-marks (mapcar #'buffer-file-name
@@ -543,7 +541,7 @@ runs git commit --amend -a, alowing an update of the previous commit."
 ;;-----------------------------------------------------------------------------
 
 ;; ewoc file info structure for each list element
-(defstruct (git--fileinfo
+(cl-defstruct (git--fileinfo
             (:copier nil)
             (:constructor git--create-fileinfo
                           (name type &optional sha1 perm marked
@@ -1152,11 +1150,11 @@ pending commit buffer or nil if the buffer wasn't needed."
       (setq filename (file-relative-name buffer-file-name)))
 
     (if on-git?
-      (case (git--status-file filename)
-        ('modified (git-commit-all))    ; modified -> commit
-        ('staged (git-commit-all))      ; staged -> commit
-        ('unknown (git--add filename))  ; unknown  -> add
-        ('unmerged (git--add filename)) ; unmerged -> add
+      (cl-case (git--status-file filename)
+        (modified (git-commit-all))    ; modified -> commit
+        (staged (git-commit-all))      ; staged -> commit
+        (unknown (git--add filename))  ; unknown  -> add
+        (unmerged (git--add filename)) ; unmerged -> add
         (t (git--add filename)))        ; TODO : add more
       ad-do-it)))
 
@@ -1291,10 +1289,10 @@ buffer TEMPLATE. Returns the buffer."
 
           (setq conflict-end (match-beginning 0))
 
-          (case side
-            ('local (delete-region conflict-sep conflict-end))
-            ('remote (delete-region conflict-begin conflict-sep))
-            (t (error "Side must be one of 'local or 'remote"))))))
+          (cl-case side
+            (local (delete-region conflict-sep conflict-end))
+            (remote (delete-region conflict-begin conflict-sep))
+            (t (error "Side must be one of local or remote"))))))
     buffer))
 
 (defun git--resolve-fill-base()
@@ -2014,7 +2012,7 @@ buffer instead of a new one."
          (friendly-rev1 (or rev1 "<index>"))
          (friendly-rev2 (if (eq t rev2) "<index>" (or rev2 "<working>")))
          (diff-buffer-name (format "*git diff: %s %s..%s*"
-                                   (case (length files)
+                                   (cl-case (length files)
                                      (0 (abbreviate-file-name
                                          (git--get-top-dir)))
                                      (1 (file-relative-name (first files)))
@@ -2616,7 +2614,7 @@ usual pre / post work: ask for save, ask for refresh."
      ;; iterating visible buffers
      (let ((visible-buffers 
             (mapcar #'(lambda (window) (window-buffer window)) (window-list))))
-       (loop for buffer in visible-buffers do
+       (cl-loop for buffer in visible-buffers do
              (with-current-buffer buffer
                (when (and (not tramp-mode) (buffer-file-name (git--in-vc-mode?)))
                  (let ((top (expand-file-name ".git/index" (git--get-top-dir))))
