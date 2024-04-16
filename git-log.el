@@ -146,7 +146,8 @@ default-directory is inside the repo."
       (apply #'vc-do-command buffer 'async "git" nil "log" "--follow" (format "-%s" logs-count)
              (append (when start-commit (list start-commit))
                      (list "--")
-                     rel-filenames))
+                     (if rel-filenames (list rel-filenames)
+			 (list saved-default-directory))))
       ;; vc sometimes goes to the end of the buffer, for unknown reasons
       (vc-exec-after `(goto-char (point-min))))
     (if dont-pop-buffer
